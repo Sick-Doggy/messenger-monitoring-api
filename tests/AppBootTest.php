@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests;
 
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use App\Tests\Api\ApiTestCase;
 
-final class AppBootTest extends KernelTestCase
+final class AppBootTest extends ApiTestCase
 {
     public function testKernelBootsWithApiPlatform(): void
     {

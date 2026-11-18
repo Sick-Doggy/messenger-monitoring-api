@@ -10,7 +10,7 @@
     </testsuites>
     <php>
         <env name="APP_ENV" value="test"/>
-        <env name="APP_DEBUG" value="1"/>
+        <env name="APP_DEBUG" value="0"/>
         <env name="INGEST_API_KEY" value="test-key"/>
         <env name="KERNEL_CLASS" value="App\Kernel"/>
         <env name="MONGODB_URL" value="mongodb://db:27017"/>
