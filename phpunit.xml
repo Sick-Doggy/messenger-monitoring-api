@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.php"
          colors="true">
-    <testsuites>
-        <testsuite name="unit">
-            <directory>tests</directory>
-        </testsuite>
-    </testsuites>
     <php>
         <env name="APP_ENV" value="test"/>
         <env name="APP_DEBUG" value="1"/>
         <env name="INGEST_API_KEY" value="test-key"/>
         <env name="KERNEL_CLASS" value="App\Kernel"/>
+        <env name="MONGODB_URL" value="mongodb://db:27017"/>
+        <env name="MONGODB_DB" value="messenger_monitoring_test"/>
     </php>
 </phpunit>
