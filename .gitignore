@@ -1,0 +1,9 @@
+vendor/
+var/
+composer.phar
+composer.lock
+.phpunit.result.cache
+phpunit.result.cache
+.phpunit.cache/
+.idea/
+.phpunit.cache/

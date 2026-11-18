@@ -1,0 +1,27 @@
+parameters:
+    ingest_api_key: '%env(INGEST_API_KEY)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        bind:
+            string $ingestApiKey: '%ingest_api_key%'
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Kernel.php'
+
+    App\Persistence\InMemoryMessageOccurrenceRepository:
+        public: true
+
+    App\Persistence\MessageOccurrenceRepositoryInterface:
+        alias: App\Persistence\InMemoryMessageOccurrenceRepository
+        public: true
+
+    # Daty z mikrosekundami w kontrakcie (RFC3339_EXTENDED) — domyślny normalizer gubi .u
+    Symfony\Component\Serializer\Normalizer\DateTimeNormalizer:
+        arguments:
+            $defaultContext:
+                datetime_format: 'Y-m-d\TH:i:s.uP'
