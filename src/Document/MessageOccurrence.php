@@ -4,20 +4,10 @@ declare(strict_types=1);
 
 namespace App\Document;
 
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
 use Doctrine\ODM\MongoDB\Mapping\Annotations as ODM;
 
+/** Mongo — głłówka wystąpienia. Kontrakt odczytu żyje w \App\ApiResource\MessageOccurrence. */
 #[ODM\Document(collection: 'message_occurrences')]
-#[ApiResource(
-    shortName: 'MessageOccurrence',
-    description: 'Główka: jedno wystąpienie monitorowanej wiadomości + cykl życia (stany).',
-    operations: [
-        new Get(),
-        new GetCollection(),
-    ],
-)]
 class MessageOccurrence
 {
     /**
@@ -39,6 +29,8 @@ class MessageOccurrence
         private array $tags = [],
         #[ODM\EmbedMany(targetDocument: MessageOccurrenceStatus::class)]
         private array $statuses = [],
+        #[ODM\Field(type: 'int', nullable: false)]
+        private int $lastOccurredAtTs = 0,
     ) {
     }
 
@@ -64,6 +56,7 @@ class MessageOccurrence
 
         $this->statuses[] = $status;
         usort($this->statuses, static fn (MessageOccurrenceStatus $a, MessageOccurrenceStatus $b): int => $a->getOccurredAtTs() <=> $b->getOccurredAtTs());
+        $this->lastOccurredAtTs = $this->lastStatus()?->getOccurredAtTs() ?? 0;
 
         return true;
     }
@@ -183,6 +176,11 @@ class MessageOccurrence
     public function getLastOccurredAt(): ?string
     {
         return $this->lastStatus()?->getOccurredAt();
+    }
+
+    public function getLastOccurredAtTs(): int
+    {
+        return $this->lastOccurredAtTs;
     }
 
     private function lastStatus(): ?MessageOccurrenceStatus
