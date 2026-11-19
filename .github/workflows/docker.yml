@@ -28,8 +28,10 @@ jobs:
           MONGODB_URI: mongodb://127.0.0.1:27017
         run: |
           docker run --rm --network host \
+            -v "$PWD:/var/www" \
             -e MONGODB_URI \
             -e MONGODB_DB=messenger_monitoring_test \
+            -e COMPOSER_ALLOW_SUPERUSER=1 \
             messenger-monitoring-api:test \
             sh -c 'composer install --no-interaction --prefer-dist && vendor/bin/phpunit -c phpunit.dist.xml'
 
