@@ -168,15 +168,15 @@ final class MonitorApiTest extends WebTestCase
 
         $this->client->request('GET', self::ENDPOINT.'?processId=spring-cleaning-2026');
         self::assertResponseStatusCodeSame(200);
-        self::assertSame(2, $this->decodedResponse()['hydra:totalItems'] ?? null);
+        self::assertSame(2, $this->decodedResponse()['totalItems'] ?? null);
 
         $this->client->request('GET', self::ENDPOINT.'?monitoringId=invoiceId-42');
         self::assertResponseStatusCodeSame(200);
-        self::assertSame(1, $this->decodedResponse()['hydra:totalItems'] ?? null);
+        self::assertSame(1, $this->decodedResponse()['totalItems'] ?? null);
 
         $this->client->request('GET', self::ENDPOINT.'?tags[]=billing&tags[]=urgent');
         self::assertResponseStatusCodeSame(200);
-        self::assertSame(1, $this->decodedResponse()['hydra:totalItems'] ?? null);
+        self::assertSame(1, $this->decodedResponse()['totalItems'] ?? null);
 
         $this->client->request('GET', self::ENDPOINT.'?tags=billing,reminder');
         self::assertResponseStatusCodeSame(200);
@@ -194,8 +194,8 @@ final class MonitorApiTest extends WebTestCase
         $this->client->request('GET', self::ENDPOINT.'?itemsPerPage=1');
 
         self::assertResponseStatusCodeSame(200);
-        self::assertSame(2, $this->decodedResponse()['hydra:totalItems'] ?? null);
-        self::assertCount(1, $this->decodedResponse()['hydra:member'] ?? []);
+        self::assertSame(2, $this->decodedResponse()['totalItems'] ?? null);
+        self::assertCount(1, $this->decodedResponse()['member'] ?? []);
     }
 
     public function testDeleteRemovesDocument(): void
@@ -235,10 +235,13 @@ final class MonitorApiTest extends WebTestCase
      */
     private function requestJson(string $method, string $uri, array $payload): void
     {
+        // PATCH działa jako merge-patch (RFC 7386) — inny Content-Type niż POST/PUT
+        $contentType = 'PATCH' === $method ? 'application/merge-patch+json' : 'application/json';
+
         $this->client->request(
             $method,
             $uri,
-            server: ['CONTENT_TYPE' => 'application/json'],
+            server: ['CONTENT_TYPE' => $contentType],
             content: json_encode($payload, JSON_THROW_ON_ERROR),
         );
     }

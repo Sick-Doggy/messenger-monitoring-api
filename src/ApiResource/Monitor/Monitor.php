@@ -69,6 +69,7 @@ use App\ApiResource\Monitor\State\UpdateMonitorProcessor;
         validationContext: ['groups' => ['Default', 'monitor:patch']],
     ),
     new Delete(
+        read: false,
         input: false,
         output: false,
         processor: DeleteMonitorProcessor::class,
