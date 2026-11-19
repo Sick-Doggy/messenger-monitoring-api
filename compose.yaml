@@ -6,6 +6,7 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
+      target: dev
     volumes:
       - .:/var/www:rw
     environment:

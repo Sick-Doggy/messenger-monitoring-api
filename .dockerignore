@@ -1,0 +1,27 @@
+# VCS i narzędzia CI
+.git
+.github
+.dockerignore
+
+# Lokalne artefakty — vendor i cache buduje się w obrazie
+vendor
+var
+.phpunit.cache
+.php-cs-fixer.cache
+composer.phar
+
+# Środowiska i konfiguracje dev-only
+.env.*.local
+.env.local
+.env
+compose.yaml
+compose.override.yaml
+compose.prod.yaml
+Makefile
+phpunit.dist.xml
+phpstan.neon
+.php-cs-fixer.dist.php
+.editorconfig
+
+# Testy docelowo nie wchodzą do obrazu prod
+tests
