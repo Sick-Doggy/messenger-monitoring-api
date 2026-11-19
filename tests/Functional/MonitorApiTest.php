@@ -180,7 +180,7 @@ final class MonitorApiTest extends WebTestCase
 
         $this->client->request('GET', self::ENDPOINT.'?tags=billing,reminder');
         self::assertResponseStatusCodeSame(200);
-        self::assertSame(0, $this->decodedResponse()['hydra:totalItems'] ?? null, 'wielowartościowy filtr tagów to AND (wszystkie tagi)');
+        self::assertSame(0, $this->decodedResponse()['totalItems'] ?? null, 'wielowartościowy filtr tagów to AND (wszystkie tagi)');
     }
 
     public function testItemsPerPageLimitsPageSize(): void

@@ -53,6 +53,7 @@ use App\ApiResource\Monitor\State\UpdateMonitorProcessor;
         validationContext: ['groups' => ['Default', 'monitor:create']],
     ),
     new Put(
+        read: false,
         input: MonitorInput::class,
         output: MonitorOutput::class,
         processor: UpdateMonitorProcessor::class,
@@ -61,6 +62,7 @@ use App\ApiResource\Monitor\State\UpdateMonitorProcessor;
         validationContext: ['groups' => ['Default', 'monitor:update']],
     ),
     new Patch(
+        read: false,
         input: MonitorPatchInput::class,
         output: MonitorOutput::class,
         processor: UpdateMonitorProcessor::class,
