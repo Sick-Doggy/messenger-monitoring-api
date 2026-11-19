@@ -19,13 +19,18 @@ services:
     App\:
         resource: '../src/'
         exclude:
-            '../src/Document/'
-            '../src/{ApiResource,Dto}/'
+            '../src/{Attribute,ApiResource/*/Dto,ApiResource/*/Document,ApiResource/*/Repository}/'
 
     # Repozytoria ODM nie są usługami kontenera — rejestrujemy je przez fabrykę DocumentManager::getRepository
-    App\Repository\MonitorRepository:
+    App\ApiResource\Monitor\Repository\MonitorRepository:
         factory: ['@doctrine_mongodb.odm.default_document_manager', 'getRepository']
-        arguments: ['App\Document\Monitor']
+        arguments: ['App\ApiResource\Monitor\Document\Monitor']
+
+    # Decorator chain metadanych AP: #[FilterParam] na klasie filtra → QueryParameter (OpenAPI)
+    App\Attribute\FilterParam\FilterParametersMetadataFactory:
+        decorates: api_platform.metadata.resource.metadata_collection_factory
+        decoration_priority: -100   # innermost — zaraz przed fabryką atrybutów
+        arguments: ['@.inner']
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Document;
+namespace App\ApiResource\Monitor\Document;
 
-use App\Repository\MonitorRepository;
+use App\ApiResource\Monitor\Repository\MonitorRepository;
 use Doctrine\ODM\MongoDB\Event\PreUpdateEventArgs;
 use Doctrine\ODM\MongoDB\Mapping\Attribute as ODM;
 use Doctrine\ODM\MongoDB\Mapping\Attribute\HasLifecycleCallbacks;

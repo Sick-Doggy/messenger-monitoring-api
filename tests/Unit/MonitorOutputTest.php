@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit;
 
-use App\Document\Monitor;
-use App\Dto\MonitorOutput;
+use App\ApiResource\Monitor\Document\Monitor;
+use App\ApiResource\Monitor\Dto\MonitorOutput;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\ApiResource;
+namespace App\ApiResource\Monitor;
 
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
@@ -12,14 +12,15 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use App\Dto\MonitorInput;
-use App\Dto\MonitorOutput;
-use App\Dto\MonitorPatchInput;
-use App\State\CreateMonitorProcessor;
-use App\State\DeleteMonitorProcessor;
-use App\State\MonitorCollectionProvider;
-use App\State\MonitorItemProvider;
-use App\State\UpdateMonitorProcessor;
+use App\ApiResource\Monitor\Dto\MonitorFilter;
+use App\ApiResource\Monitor\Dto\MonitorInput;
+use App\ApiResource\Monitor\Dto\MonitorOutput;
+use App\ApiResource\Monitor\Dto\MonitorPatchInput;
+use App\ApiResource\Monitor\State\CreateMonitorProcessor;
+use App\ApiResource\Monitor\State\DeleteMonitorProcessor;
+use App\ApiResource\Monitor\State\MonitorCollectionProvider;
+use App\ApiResource\Monitor\State\MonitorItemProvider;
+use App\ApiResource\Monitor\State\UpdateMonitorProcessor;
 
 /**
  * Identifikator zasobu Monitor. Dane wejściowe/wyjściowe są w App\Dto,
@@ -40,6 +41,8 @@ use App\State\UpdateMonitorProcessor;
         output: MonitorOutput::class,
         provider: MonitorCollectionProvider::class,
         normalizationContext: ['groups' => ['monitor:read']],
+        paginationClientItemsPerPage: true,
+        extraProperties: ['filter' => MonitorFilter::class],
     ),
     new Post(
         input: MonitorInput::class,

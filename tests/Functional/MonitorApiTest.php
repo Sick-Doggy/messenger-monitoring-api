@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Document\Monitor;
+use App\ApiResource\Monitor\Document\Monitor;
 use Doctrine\ODM\MongoDB\DocumentManager;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -181,6 +181,21 @@ final class MonitorApiTest extends WebTestCase
         $this->client->request('GET', self::ENDPOINT.'?tags=billing,reminder');
         self::assertResponseStatusCodeSame(200);
         self::assertSame(0, $this->decodedResponse()['hydra:totalItems'] ?? null, 'wielowartościowy filtr tagów to AND (wszystkie tagi)');
+    }
+
+    public function testItemsPerPageLimitsPageSize(): void
+    {
+        $monitor = new Monitor(self::UUID_V4, self::CLASS_NAME, 'invoiceId-42', null, null, []);
+        $other = new Monitor(self::UUID_V4_ALT, self::CLASS_NAME, null, null, null, []);
+        $this->documentManager->persist($monitor);
+        $this->documentManager->persist($other);
+        $this->documentManager->flush();
+
+        $this->client->request('GET', self::ENDPOINT.'?itemsPerPage=1');
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame(2, $this->decodedResponse()['hydra:totalItems'] ?? null);
+        self::assertCount(1, $this->decodedResponse()['hydra:member'] ?? []);
     }
 
     public function testDeleteRemovesDocument(): void

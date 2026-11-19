@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Dto;
+namespace App\ApiResource\Monitor\Dto;
 
 use ApiPlatform\Metadata\ApiProperty;
-use App\Document\Monitor;
+use App\ApiResource\Monitor\Document\Monitor;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 /**

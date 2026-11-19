@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\State;
+namespace App\ApiResource\Monitor\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
-use App\Document\Monitor;
-use App\Dto\MonitorInput;
-use App\Dto\MonitorOutput;
+use App\ApiResource\Monitor\Document\Monitor;
+use App\ApiResource\Monitor\Dto\MonitorInput;
+use App\ApiResource\Monitor\Dto\MonitorOutput;
 use Doctrine\ODM\MongoDB\DocumentManager;
 
 /**

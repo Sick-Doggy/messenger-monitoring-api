@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\State;
+namespace App\ApiResource\Monitor\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
-use App\Document\Monitor;
-use App\Dto\MonitorOutput;
+use App\ApiResource\Monitor\Document\Monitor;
+use App\ApiResource\Monitor\Dto\MonitorOutput;
 use Doctrine\ODM\MongoDB\DocumentManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
