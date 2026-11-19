@@ -1,16 +1,11 @@
 api_platform:
-    title: Messenger Monitoring Store
-    description: 'Kontrakt monitoringu Symfony Messenger: raporty cyklu życia + przegląd wystąpień wiadomości.'
-    version: '1.0.0'
-    formats:
-        json:
-            mime_types: ['application/json']
-        jsonopenapi:
-            mime_types: ['application/vnd.openapi+json']
-    error_formats:
-        jsonproblem:
-            mime_types: ['application/problem+json']
+    title: Messenger Monitoring API
+    version: 1.0.0
     defaults:
         stateless: true
+        pagination_maximum_items_per_page: 100
         cache_headers:
-            vary: ['Content-Type', 'Authorization']
+            vary: ['Content-Type', 'Authorization', 'Origin']
+    formats:
+        jsonld: ['application/ld+json']
+        json: ['application/json']
