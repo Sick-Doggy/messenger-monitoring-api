@@ -21,15 +21,17 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build obrazu dev
-        run: docker build --target dev -t messenger-monitoring-api:test .
+        run: docker build -f docker/php/Dockerfile --target dev -t messenger-monitoring-api:test .
 
       - name: Composer install + PHPUnit
         env:
           MONGODB_URI: mongodb://127.0.0.1:27017
         run: |
           docker run --rm --network host \
+            -v "$PWD:/var/www" \
             -e MONGODB_URI \
             -e MONGODB_DB=messenger_monitoring_test \
+            -e COMPOSER_ALLOW_SUPERUSER=1 \
             messenger-monitoring-api:test \
             sh -c 'composer install --no-interaction --prefer-dist && vendor/bin/phpunit -c phpunit.dist.xml'
 
@@ -66,6 +68,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ./docker/php/Dockerfile
           target: prod
           platforms: linux/amd64,linux/arm64
           push: true
