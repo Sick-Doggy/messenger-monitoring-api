@@ -5,7 +5,23 @@ api_platform:
         stateless: true
         pagination_maximum_items_per_page: 100
         cache_headers:
-            vary: ['Content-Type', 'Authorization', 'Origin']
+            vary: ['Content-Type', 'Authorization', 'X-Api-Key', 'Origin']
+    swagger:
+        # Kontrakt: biblioteka monitorująca wysyła klucz w nagłówku X-Api-Key.
+        # securitySchemes.api_key + globalne security w /api/docs.json
+        api_keys:
+            api_key:
+                name: X-Api-Key
+                type: header
     formats:
+        # negocjacja treści operacji zasobów
+        html: ['text/html']
         jsonld: ['application/ld+json']
+        json: ['application/json']
+    docs_formats:
+        # negocjacja /api i /api/docs.{_format} (Swagger UI + spec OpenAPI)
+        # json jest WYMAGANY do /api/docs.json — nie usuwać
+        jsonld: ['application/ld+json']
+        jsonopenapi: ['application/vnd.openapi+json']
+        html: ['text/html']
         json: ['application/json']

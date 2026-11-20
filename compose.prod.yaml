@@ -13,6 +13,7 @@ services:
       APP_ENV: prod
       APP_DEBUG: 0
       APP_SECRET: ${APP_SECRET:?Wymagane — ustaw w .env lub env}
+      API_KEY: ${API_KEY:?Wymagane — klucz nagłówka X-Api-Key}
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017}
       MONGODB_DB: ${MONGODB_DB:-messenger_monitoring}
     depends_on:

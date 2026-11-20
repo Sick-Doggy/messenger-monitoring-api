@@ -19,10 +19,15 @@ final class MonitorApiTest extends WebTestCase
 
     private KernelBrowser $client;
     private DocumentManager $documentManager;
+    private string $apiKey;
 
     protected function setUp(): void
     {
         $this->client = self::createClient();
+
+        $apiKey = self::getContainer()->getParameter('api_key');
+        self::assertIsString($apiKey);
+        $this->apiKey = $apiKey;
 
         $documentManager = self::getContainer()->get(DocumentManager::class);
         \assert($documentManager instanceof DocumentManager);
@@ -166,19 +171,19 @@ final class MonitorApiTest extends WebTestCase
         $this->documentManager->persist($other);
         $this->documentManager->flush();
 
-        $this->client->request('GET', self::ENDPOINT.'?processId=spring-cleaning-2026');
+        $this->requestApi('GET', self::ENDPOINT.'?processId=spring-cleaning-2026');
         self::assertResponseStatusCodeSame(200);
         self::assertSame(2, $this->decodedResponse()['totalItems'] ?? null);
 
-        $this->client->request('GET', self::ENDPOINT.'?monitoringId=invoiceId-42');
+        $this->requestApi('GET', self::ENDPOINT.'?monitoringId=invoiceId-42');
         self::assertResponseStatusCodeSame(200);
         self::assertSame(1, $this->decodedResponse()['totalItems'] ?? null);
 
-        $this->client->request('GET', self::ENDPOINT.'?tags[]=billing&tags[]=urgent');
+        $this->requestApi('GET', self::ENDPOINT.'?tags[]=billing&tags[]=urgent');
         self::assertResponseStatusCodeSame(200);
         self::assertSame(1, $this->decodedResponse()['totalItems'] ?? null);
 
-        $this->client->request('GET', self::ENDPOINT.'?tags=billing,reminder');
+        $this->requestApi('GET', self::ENDPOINT.'?tags=billing,reminder');
         self::assertResponseStatusCodeSame(200);
         self::assertSame(0, $this->decodedResponse()['totalItems'] ?? null, 'wielowartościowy filtr tagów to AND (wszystkie tagi)');
     }
@@ -191,7 +196,7 @@ final class MonitorApiTest extends WebTestCase
         $this->documentManager->persist($other);
         $this->documentManager->flush();
 
-        $this->client->request('GET', self::ENDPOINT.'?itemsPerPage=1');
+        $this->requestApi('GET', self::ENDPOINT.'?itemsPerPage=1');
 
         self::assertResponseStatusCodeSame(200);
         self::assertSame(2, $this->decodedResponse()['totalItems'] ?? null);
@@ -202,7 +207,7 @@ final class MonitorApiTest extends WebTestCase
     {
         $this->createDocument();
 
-        $this->client->request('DELETE', self::ENDPOINT.'/'.self::UUID_V4);
+        $this->requestApi('DELETE', self::ENDPOINT.'/'.self::UUID_V4);
 
         self::assertResponseStatusCodeSame(204);
         self::assertNull($this->documentManager->find(Monitor::class, self::UUID_V4));
@@ -210,9 +215,36 @@ final class MonitorApiTest extends WebTestCase
 
     public function testGetMissingOccurrenceReturns404(): void
     {
-        $this->client->request('GET', self::ENDPOINT.'/'.self::UUID_V4);
+        $this->requestApi('GET', self::ENDPOINT.'/'.self::UUID_V4);
 
         self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testRequestWithoutApiKeyReturns401(): void
+    {
+        $this->client->request('GET', self::ENDPOINT);
+
+        self::assertResponseStatusCodeSame(401);
+        self::assertStringContainsString('X-Api-Key', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testRequestWithWrongApiKeyReturns401(): void
+    {
+        $this->client->request('GET', self::ENDPOINT, server: ['HTTP_X_API_KEY' => 'wrong-key']);
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function testOpenApiDocsArePublic(): void
+    {
+        $this->client->request('GET', '/api/docs.json');
+
+        self::assertResponseStatusCodeSame(200);
+
+        $content = (string) $this->client->getResponse()->getContent();
+
+        self::assertStringContainsString('X-Api-Key', $content);
+        self::assertStringContainsString('api_key', $content, 'Spec ma deklarować securitySchemes.api_key.');
     }
 
     private function createDocument(): void
@@ -238,12 +270,15 @@ final class MonitorApiTest extends WebTestCase
         // PATCH działa jako merge-patch (RFC 7386) — inny Content-Type niż POST/PUT
         $contentType = 'PATCH' === $method ? 'application/merge-patch+json' : 'application/json';
 
-        $this->client->request(
-            $method,
-            $uri,
-            server: ['CONTENT_TYPE' => $contentType],
-            content: json_encode($payload, JSON_THROW_ON_ERROR),
-        );
+        $this->requestApi($method, $uri, ['CONTENT_TYPE' => $contentType], json_encode($payload, JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * @param array<string, mixed> $server
+     */
+    private function requestApi(string $method, string $uri, array $server = [], ?string $content = null): void
+    {
+        $this->client->request($method, $uri, server: $server + ['HTTP_X_API_KEY' => $this->apiKey], content: $content);
     }
 
     /**
