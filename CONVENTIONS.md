@@ -46,12 +46,14 @@ Semantyka POST: jeżeli zasób jest rozpoznawalny po ID nadawanym przez klienta,
 - Repozytorium przyjmuje gotowy obiekt filtrów: `search({Zasób}Filter)` + osobne `countBy()`.
 - Metadane filtrów do OpenAPI: atrybut generyczny `App\Attribute\FilterParam\FilterParam` (description/schema/required) na polach klasy filtrów; dekorator `FilterParametersMetadataFactory` (`decorates: api_platform.metadata.resource.metadata_collection_factory`, `decoration_priority: -100`) przekłada je na `QueryParameter`. Zasób podpina filtr przez `extraProperties: ['filter' => {Zasób}Filter::class]`.
 - Semantyka filtru po tagach: **AND** (`$all`), syntax `?tags[]=a&tags[]=b` lub `?tags=a,b`.
+- Semantyka filtru po etapie stanu (`MonitorState`, `?stage=`): **OR** (`$in`) — stan ma dokładnie jeden etap, więc AND nie miałby sensu; syntax jak przy tagach.
 
 ## Paginacja
 
 - Offsetowa, wariant Hydra: `page` + `itemsPerPage` + `totalItems`; `paginationClientItemsPerPage: true` — klient może ograniczyć rozmiar strony.
 - Generyczny paginator: `src/State/CollectionPaginator.php` (`@template T of object`, `@implements PaginatorInterface<T>` + `IteratorAggregate`; nie używać `int,T`).
 - Kolekcje sortowane stabilnie po `createdAt desc`.
+  - Wyjątek: historia stanów (`MonitorState`, `/api/monitors/{occurrenceId}/states`) — chronologicznie po `occurredAtTs asc` (sekwencja zdarzeń w kolejności, w jakiej nastąpiły, niezależnie od kolejności dojścia raportów).
 - Tryb cursor/`?since` robimy **wyłącznie jako osobną operację** (osobny `uriTemplate`, np. `/monitors/stream` + dedykowane Output) — nie przekształcamy offsetowej paginacji in place.
 
 ## Nowy zasób — checklist

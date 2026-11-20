@@ -7,11 +7,12 @@ namespace App\ApiResource\Monitor\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\Monitor\Document\Monitor;
+use App\ApiResource\MonitorState\Repository\MonitorStateRepository;
 use Doctrine\ODM\MongoDB\DocumentManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * Zapis: usunięcie wystąpienia (DELETE).
+ * Zapis: usunięcie wystąpienia (DELETE) razem z jego historią stanów.
  *
  * @implements ProcessorInterface<null, null>
  */
@@ -19,6 +20,7 @@ final class DeleteMonitorProcessor implements ProcessorInterface
 {
     public function __construct(
         private readonly DocumentManager $documentManager,
+        private readonly MonitorStateRepository $states,
     ) {
     }
 
@@ -35,6 +37,9 @@ final class DeleteMonitorProcessor implements ProcessorInterface
 
         $this->documentManager->remove($monitor);
         $this->documentManager->flush();
+
+        // stany są dostępne tylko pod /api/monitors/{occurrenceId}/states — bez Monitora byłyby osierocone
+        $this->states->deleteOfMonitor((string) $occurrenceId);
 
         return null;
     }

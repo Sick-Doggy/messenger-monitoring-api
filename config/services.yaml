@@ -28,6 +28,10 @@ services:
         factory: ['@doctrine_mongodb.odm.default_document_manager', 'getRepository']
         arguments: ['App\ApiResource\Monitor\Document\Monitor']
 
+    App\ApiResource\MonitorState\Repository\MonitorStateRepository:
+        factory: ['@doctrine_mongodb.odm.default_document_manager', 'getRepository']
+        arguments: ['App\ApiResource\MonitorState\Document\MonitorState']
+
     # Decorator chain metadanych AP: #[FilterParam] na klasie filtra → QueryParameter (OpenAPI)
     App\Attribute\FilterParam\FilterParametersMetadataFactory:
         decorates: api_platform.metadata.resource.metadata_collection_factory
