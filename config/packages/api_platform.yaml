@@ -14,10 +14,13 @@ api_platform:
                 name: X-Api-Key
                 type: header
     formats:
-        # negocjacja treści operacji zasobów
-        html: ['text/html']
+        # negocjacja treści operacji zasobów. KOLEJNOŚĆ MA ZNACZENIE:
+        # bez nagłówka Accept defaultem jest PIERWSZY format (jsonld — kontrakt API),
+        # nie html (SwaggerUiProvider "porywa" żądania bez Accept i stawia 500 na POST/PUT/PATCH).
+        # html zostaje w zestawie dla przeglądarkowego Swagger UI (Accept: text/html).
         jsonld: ['application/ld+json']
         json: ['application/json']
+        html: ['text/html']
     docs_formats:
         # negocjacja /api i /api/docs.{_format} (Swagger UI + spec OpenAPI)
         # json jest WYMAGANY do /api/docs.json — nie usuwać
