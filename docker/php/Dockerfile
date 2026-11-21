@@ -37,6 +37,11 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer install \
         --optimize-autoloader \
         --no-scripts
 
+# Kompilowany boot: .env nie wchodzi do obrazu (.dockerignore), a SymfonyRuntime
+# wymaga odczytu .env przy starcie (PathException). --empty = tylko APP_ENV=prod,
+# wartości przychodzą w runtime z środowiska (nic z devowego .env nie trafia do obrazu).
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer dump-env prod --empty
+
 # PRODUCTION: obraz samowystarczalny — FrankenPHP (Caddy + PHP w jednym binarium)
 # serwuje HTTP sam, bez nginx/fpm. Baza NIE jest taka sama jak dev (ZTS, runtime Caddy).
 FROM dunglas/frankenphp:1.3.6-php8.4-alpine AS prod
