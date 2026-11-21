@@ -20,8 +20,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build obrazu dev
-        run: docker build -f docker/php/Dockerfile --target dev -t messenger-monitoring-api:test .
+      - name: Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Composer cache
+        uses: actions/cache@v4
+        with:
+          path: .composer-cache
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+
+      - name: Build obrazu dev (cache gha)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/php/Dockerfile
+          target: dev
+          load: true
+          tags: messenger-monitoring-api:test
+          cache-from: type=gha,scope=dev
+          cache-to: type=gha,scope=dev,mode=max
 
       - name: Composer install + PHPUnit
         env:
@@ -29,21 +46,30 @@ jobs:
         run: |
           docker run --rm --network host \
             -v "$PWD:/var/www" \
+            -v "$PWD/.composer-cache:/tmp/composer-cache" \
             -e MONGODB_URI \
             -e MONGODB_DB=messenger_monitoring_test \
+            -e COMPOSER_CACHE_DIR=/tmp/composer-cache \
             -e COMPOSER_ALLOW_SUPERUSER=1 \
             messenger-monitoring-api:test \
             sh -c 'composer install --no-interaction --prefer-dist && vendor/bin/phpunit -c phpunit.dist.xml'
 
   publish:
-    name: Publikacja obrazu prod
+    name: Publikacja obrazu prod (${{ matrix.plain }})
     needs: test
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - plain: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - plain: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: QEMU (multi-arch)
-        uses: docker/setup-qemu-action@v3
 
       - name: Buildx
         uses: docker/setup-buildx-action@v3
@@ -54,25 +80,26 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Metadane tagów
+      - name: Metadane tagów (suffix architektury)
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE }}
+          # Dwa osobne obrazy (nie manifest list) — konsument dobiera tag wg architektury.
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest
+            type=semver,pattern={{version}}-${{ matrix.plain }}
+            type=semver,pattern={{major}}.{{minor}}-${{ matrix.plain }}
+            type=raw,value=latest-${{ matrix.plain }}
 
-      - name: Build + push (amd64, arm64)
+      - name: Build + push (natywnie, bez QEMU)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/php/Dockerfile
           target: prod
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=build-${{ matrix.plain }}
+          cache-to: type=gha,scope=build-${{ matrix.plain }},mode=max

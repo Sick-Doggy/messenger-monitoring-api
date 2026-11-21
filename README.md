@@ -24,7 +24,8 @@ A minimal `docker-compose.yml`:
 services:
 
   php:
-    image: sickdoggy/messenger-monitoring-api:latest
+    # Pick the tag matching your architecture: latest-amd64 / latest-arm64
+    image: sickdoggy/messenger-monitoring-api:latest-amd64
     ports:
       - "${WEB_PORT:-8080}:8080"
     environment:
@@ -97,9 +98,11 @@ Functional tests require a running MongoDB (`compose.override.yaml` / localhost:
 
 The production image is published by the `.github/workflows/docker.yml` workflow on push of a **git tag `v*`** (e.g. `git tag v1.0.0 && git push origin v1.0.0`):
 
-1. job `test` — builds the dev image, runs composer install + PHPUnit with a mongo:8 service container,
-2. job `publish` — buildx multi-arch (`linux/amd64`, `linux/arm64`), pushes to Docker Hub
-   as `{{version}}`, `{{major.minor}}` and `latest`.
+1. job `test` — builds the dev image (with GitHub Actions build cache), runs composer install + PHPUnit with a mongo:8 service container,
+2. job `publish` — two separate images, each built natively on its own runner (no QEMU emulation):
+   `linux/amd64` on `ubuntu-latest` and `linux/arm64` on `ubuntu-24.04-arm`. Tags carry an
+   architecture suffix — `{{version}}-amd64`, `{{major.minor}}-amd64`, `latest-amd64`
+   (and the same with `-arm64`); consumers pick the tag matching their platform.
 
 Required GitHub repository secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`
 (Docker Hub access token). The image namespace (`sickdoggy/messenger-monitoring-api`)

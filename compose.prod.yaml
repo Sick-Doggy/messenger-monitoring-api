@@ -9,7 +9,8 @@ name: messenger-monitoring-api
 services:
 
   php:
-    image: sickdoggy/messenger-monitoring-api:latest
+    # dwa osobne obrazy (suffix architektury): latest-amd64 / latest-arm64
+    image: sickdoggy/messenger-monitoring-api:latest-amd64
     ports:
       - "${WEB_PORT:-8080}:8080"
     environment:
