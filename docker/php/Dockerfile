@@ -45,7 +45,7 @@ COPY --from=mlocati/php-extension-installer:2 /usr/bin/install-php-extensions /u
 
 # rozszerzenia jak w base; install-php-extensions czyści build-deps sam
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git unzip \
+    && apt-get install -y --no-install-recommends git unzip curl \
     && rm -rf /var/lib/apt/lists/* \
     && install-php-extensions intl opcache mongodb
 
@@ -72,4 +72,4 @@ USER www-data
 CMD ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile", "--adapter", "caddyfile"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://127.0.0.1:8080/health || exit 1
+    CMD curl --fail -s http://127.0.0.1:8080/health || exit 1
