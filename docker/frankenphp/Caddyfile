@@ -1,0 +1,26 @@
+# FrankenPHP prod: jeden proces (Caddy + PHP) serwujący API.
+# TLS/HTTPS po stronie reverse proxy konsumenta — tu tylko plain HTTP na 8080.
+{
+	# certyfikaty/admin po stronie konsumenta, nie w obrazie aplikacji
+	auto_https off
+	admin off
+	log {
+		output stdout
+		format json
+		level warn
+	}
+}
+
+:8080 {
+	# endpoint dla HEALTHCHECK obrazu
+	handle /health {
+		respond "ok" 200
+	}
+
+	handle {
+		root * /var/www/public
+		encode gzip
+		# tryb klasyczny: request -> osobne wykonanie PHP (jak fpm, bez worker mode)
+		php_server
+	}
+}

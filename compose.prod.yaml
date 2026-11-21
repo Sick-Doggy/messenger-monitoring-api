@@ -1,7 +1,8 @@
 # Produkcyjne uruchomienie pobrane z rejestru:
 #   docker compose -f compose.prod.yaml up -d
-# Obraz php pochodzi z Docker Hub (publikowany workflowem na git tag).
-# Wymagany plik docker/nginx/default.conf w katalogu obok.
+# Obraz pochodzi z Docker Hub (publikowany workflowem na git tag).
+# Image jest samowystarczalny: FrankenPHP (Caddy + PHP) serwuje HTTP na 8080,
+# bez zewnętrznego nginx/fpm.
 
 name: messenger-monitoring-api
 
@@ -9,25 +10,17 @@ services:
 
   php:
     image: sickdoggy/messenger-monitoring-api:latest
+    ports:
+      - "${WEB_PORT:-8080}:8080"
     environment:
       APP_ENV: prod
-      APP_DEBUG: 0
-      APP_SECRET: ${APP_SECRET:?Wymagane — ustaw w .env lub env}
-      API_KEY: ${API_KEY:?Wymagane — klucz nagłówka X-Api-Key}
+      APP_DEBUG: "0"
+      APP_SECRET: ${APP_SECRET:?Required — set in .env or environment}
+      API_KEY: ${API_KEY:?Required — key sent as the X-Api-Key header}
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017}
       MONGODB_DB: ${MONGODB_DB:-messenger_monitoring}
     depends_on:
       - mongodb
-    restart: unless-stopped
-
-  web:
-    image: nginx:alpine
-    ports:
-      - "${WEB_PORT:-8080}:80"
-    volumes:
-      - ./docker/nginx/default.prod.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - php
     restart: unless-stopped
 
   mongodb:

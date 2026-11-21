@@ -1,8 +1,10 @@
 # Messenger Monitoring API
 
-REST API do monitorowania komunikatorów, zbudowana na **Symfony 7.4** + **API Platform 5** + **MongoDB ODM**, PHP **8.4**.
+REST API for monitoring messenger traffic, built with **Symfony 7.4** + **API Platform 5** + **MongoDB ODM** on **PHP 8.4**.
 
-## Szybki start (Docker)
+Requests to the API require the `X-Api-Key` header (`API_KEY` environment variable). The OpenAPI docs endpoints (`/api/docs`, `/api/docs.json`) are public.
+
+## Quick start (Docker, development)
 
 ```bash
 docker compose build
@@ -10,73 +12,113 @@ docker compose up -d
 docker compose run --rm php composer install
 ```
 
-API jest dostępne pod `http://localhost:8080/api`.
+The API is available at `http://localhost:8080/api`.
 
-## Struktura (zasób zamknięty w jednym katalogu)
+## Example: consuming the published image
+
+The production image (`target: prod`) is published on Docker Hub. It is fully self-contained: it runs **FrankenPHP** (Caddy with embedded PHP) and serves HTTP itself on port `8080` — no external nginx/fpm needed. TLS/HTTPS is the job of a reverse proxy in front of the container, if you have one.
+
+A minimal `docker-compose.yml`:
+
+```yaml
+services:
+
+  php:
+    image: sickdoggy/messenger-monitoring-api:latest
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: "0"
+      APP_SECRET: ${APP_SECRET:?Set APP_SECRET in .env or environment}
+      API_KEY: ${API_KEY:?Set API_KEY (sent as X-Api-Key header)}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017}
+      MONGODB_DB: ${MONGODB_DB:-messenger_monitoring}
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:8
+    volumes:
+      - mongodb_data:/data/db:rw
+    command: ['--quiet']
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+```
+
+Then:
+
+```bash
+docker compose up -d
+curl -H "X-Api-Key: <your-key>" http://localhost:8080/api/docs.json
+```
+
+The image ships with a tiny health endpoint (`/health`, always `200`) outside the API firewall — useful for container `HEALTHCHECK` and load balancer probes.
+
+## Project structure
 
 ```
 src/
   ApiResource/
-    Monitor/                    # zasób Monitor — całość w jednym miejscu
-      Monitor.php               # identyfikator zasobu + definicja operacji
-      Document/Monitor.php      # dokument MongoDB (czysta domena, bez API Platform)
+    Monitor/                    # Monitor resource — everything in one place
+      Monitor.php               # resource id + operation definitions
+      Document/Monitor.php      # MongoDB document (pure domain, no API Platform)
       Dto/                      # Input / PatchInput / Output / Filter (+ #[FilterParam])
-      Repository/               # MonitorRepository: zapytania + kryteria
-      State/                    # Providerzy, Procesory, MonitorFilterFactory
+      Repository/               # MonitorRepository: queries + criteria
+      State/                    # Providers, Processors, MonitorFilterFactory
   Attribute/
-    FilterParam/                # #[FilterParam] + factory wypychająca je do OpenAPI (generik)
+    FilterParam/                # #[FilterParam] + factory pushing it into OpenAPI (generic)
       FilterParam.php
       FilterParametersMetadataFactory.php
+  Security/                     # X-Api-Key authenticator + user
   State/
-    CollectionPaginator.php     # paginator dla custom providerów (generik)
+    CollectionPaginator.php     # paginator for custom providers (generic)
   Kernel.php
 ```
 
-Nowy zasób = katalog w `src/ApiResource/{Name}/` z `{Name}.php`, `Document/`,
-`Dto/`, `Repository/`, `State/`; atrybutami `#[FilterParam]` opisujesz pola
-`{Name}Filter` i dokumentacja Swaggera robi się sama.
+A new resource is a directory under `src/ApiResource/{Name}/` containing `{Name}.php`, `Document/`, `Dto/`, `Repository/`, `State/`. Fields of `{Name}Filter` annotated with `#[FilterParam]` produce the OpenAPI query-parameter documentation automatically.
 
-Narzędzia jakości i testy uruchamiasz z Makefile (Docker) lub lokalnie, jeśli masz PHP 8.4 z rozszerzeniami `mongodb` + `intl`:
+## Quality tools & tests
+
+Run from the Makefile (Docker), or locally if you have PHP 8.4 with the `mongodb` + `intl` extensions:
 
 ```bash
-make stan        # PHPStan, poziom 8
-make cs          # PHP-CS-Fixer (ruleset @Symfony)
+make stan        # PHPStan, level 8
+make cs          # PHP-CS-Fixer (@Symfony ruleset)
 make test        # PHPUnit
 ```
 
-Testy funkcyjne wymagają działającego MongoDB (`compose.override.yaml` / localhost:27017).
+Functional tests require a running MongoDB (`compose.override.yaml` / localhost:27017).
 
-## Publikacja obrazu (Docker Hub)
+## Publishing the image (Docker Hub)
 
-Obraz produkcyjny PHP-FPM (`target: prod`) publikowany jest workflowem
-`.github/workflows/docker.yml` na push **git taga `v*`** (np. `git tag v1.0.0 && git push origin v1.0.0`):
+The production image is published by the `.github/workflows/docker.yml` workflow on push of a **git tag `v*`** (e.g. `git tag v1.0.0 && git push origin v1.0.0`):
 
-1. job `test` — buduje obraz dev, odpala composer install + PHPUnit z serwisem mongo:8,
-2. job `publish` — buildx multi-arch (`linux/amd64`, `linux/arm64`), push do Docker Hub
-   jako `{{wersja}}`, `{{major.minor}}` i `latest`.
+1. job `test` — builds the dev image, runs composer install + PHPUnit with a mongo:8 service container,
+2. job `publish` — buildx multi-arch (`linux/amd64`, `linux/arm64`), pushes to Docker Hub
+   as `{{version}}`, `{{major.minor}}` and `latest`.
 
-Wymagane sekrety repozytorium GitHub: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`
-(access token z Docker Hub). Namespace obrazu (`sickdoggy/messenger-monitoring-api`)
-ustawiany jest w `env.IMAGE` workflowa.
+Required GitHub repository secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`
+(Docker Hub access token). The image namespace (`sickdoggy/messenger-monitoring-api`)
+is set in `env.IMAGE` of the workflow.
 
-Prod lokalnie z opublikowanego obrazu:
-
-```bash
-docker compose -f compose.prod.yaml up -d   # APP_SECRET musi przyjść z .env/env
-```
-
-Bez CI — ręcznie:
+Publishing without CI — manually:
 
 ```bash
 docker build --target prod -t sickdoggy/messenger-monitoring-api:local .
 ```
 
-## Konfiguracja
+## Configuration
 
-Główne zmienne (`/ .env`, nadpisyj w `.env.local`):
+Main variables (`.env`, override in `.env.local`):
 
-| zmienna         | wartość domyślna              | opis                          |
-|-----------------|-------------------------------|-------------------------------|
-| `MONGODB_URI`   | `mongodb://localhost:27017`   | adres MongoDB (Docker: `mongodb://mongodb:27017`) |
-| `MONGODB_DB`    | `messenger_monitoring`        | nazwa bazy                    |
-| `APP_ENV`       | `dev`                         | środowisko Symfony            |
+| Variable       | Default                     | Description                                        |
+|----------------|-----------------------------|----------------------------------------------------|
+| `MONGODB_URI`  | `mongodb://localhost:27017` | MongoDB address (Docker: `mongodb://mongodb:27017`) |
+| `MONGODB_DB`   | `messenger_monitoring`      | Database name                                      |
+| `API_KEY`      | —                           | Key sent in the `X-Api-Key` header                 |
+| `APP_ENV`      | `dev`                       | Symfony environment                                |
+| `APP_SECRET`   | —                           | Symfony secret (required in production)            |
