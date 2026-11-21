@@ -1,20 +1,15 @@
 #syntax=docker/dockerfile:1
 
-# Baza wspólna dla dev i build: rozszerzenia PHP + composer
-FROM php:8.4-fpm-alpine AS base
+# Baza wspólna dla dev i build: rozszerzenia PHP + composer.
+# Debian (trixie, glibc) + FrankenPHP default — mniej egzotyki niż musl/alpine.
+FROM php:8.4-fpm-trixie AS base
 
-RUN apk add --no-cache \
-        icu \
-        libzip \
-        git \
-    && apk add --no-cache --virtual .build-deps \
-        icu-dev \
-        libzip-dev \
-        $PHPIZE_DEPS \
-    && docker-php-ext-install -j "$(nproc)" intl opcache \
-    && pecl install mongodb \
-    && docker-php-ext-enable mongodb \
-    && apk del .build-deps
+COPY --from=mlocati/php-extension-installer:2 /usr/bin/install-php-extensions /usr/local/bin/
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git unzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && install-php-extensions intl opcache mongodb
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -44,10 +39,14 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer dump-env prod --empty
 
 # PRODUCTION: obraz samowystarczalny — FrankenPHP (Caddy + PHP w jednym binarium)
 # serwuje HTTP sam, bez nginx/fpm. Baza NIE jest taka sama jak dev (ZTS, runtime Caddy).
-FROM dunglas/frankenphp:1.3.6-php8.4-alpine AS prod
+FROM dunglas/frankenphp:1.14.0-php8.4 AS prod
+
+COPY --from=mlocati/php-extension-installer:2 /usr/bin/install-php-extensions /usr/local/bin/
 
 # rozszerzenia jak w base; install-php-extensions czyści build-deps sam
-RUN apk add --no-cache git \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git unzip \
+    && rm -rf /var/lib/apt/lists/* \
     && install-php-extensions intl opcache mongodb
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
