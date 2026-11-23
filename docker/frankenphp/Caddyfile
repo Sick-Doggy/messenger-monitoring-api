@@ -12,6 +12,12 @@
 }
 
 :8080 {
+	# access log: każdy request na stdout (docker logs), JSON, info level
+	log {
+		output stdout
+		format json
+	}
+
 	# endpoint dla HEALTHCHECK obrazu
 	handle /health {
 		respond "ok" 200
