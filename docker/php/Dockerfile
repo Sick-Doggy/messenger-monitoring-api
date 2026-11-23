@@ -37,22 +37,23 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer install \
 # wartości przychodzą w runtime ze środowiska; nic z devowego .env nie trafia do obrazu.
 RUN printf 'APP_ENV=prod\n' > /var/www/.env
 
+# Ślepę env dla KOMEND builda (assets:install, cache:warmup — każda bin/console bootuje
+# kernel i kompilacja kontenera rozwija %env()% ze config/). Defaulty z .env repo, żadna
+# nie jest sekretem. ENV nie przecieka do stage prod (osobny FROM); realne wartości w runtime.
+ENV MONGODB_URI=mongodb://mongodb:27017 \
+    MONGODB_DB=messenger_monitoring \
+    APP_SECRET=buildtime-stub-not-a-secret \
+    API_KEY=buildtime-stub-not-a-secret \
+    DEFAULT_URI=http://localhost \
+    CORS_ALLOW_ORIGIN='^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
+
 # Assets z bundlów (Swagger UI CSS/JS itd.): composer --no-scripts nie odpala assets:install,
 # więc kopiujemy jawnie z vendora — public/bundles w pełnej wersji (z vendor/api-platform).
 RUN COMPOSER_ALLOW_SUPERUSER=1 php bin/console assets:install --env=prod
 
 # Cache wypalany w buildzie: katalog var/cache/prod wchodzi do obrazu (runtime nie tworzy go
 # sam), a błąd bootowania aplikacji wywala BUILD zamiast umierać po cichu w runtime.
-# Ślepę env = defaulty z .env repo (kompilacja kontenera wymaga rozwinięcia %env()%); żadna
-# nie jest sekretem, prodowe wartości przychodzą w runtime z compose (procesory env lazy).
-RUN MONGODB_URI=mongodb://mongodb:27017 \
-    MONGODB_DB=messenger_monitoring \
-    APP_SECRET=buildtime-stub-not-a-secret \
-    API_KEY=buildtime-stub-not-a-secret \
-    DEFAULT_URI=http://localhost \
-    CORS_ALLOW_ORIGIN='^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$' \
-    COMPOSER_ALLOW_SUPERUSER=1 \
-    php bin/console cache:warmup --env=prod --no-interaction
+RUN COMPOSER_ALLOW_SUPERUSER=1 php bin/console cache:warmup --env=prod --no-interaction
 
 # PRODUCTION: obraz samowystarczalny — FrankenPHP (Caddy + PHP w jednym binarium)
 # serwuje HTTP sam, bez nginx/fpm. Baza NIE jest taka sama jak dev (ZTS, runtime Caddy).
