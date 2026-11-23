@@ -32,10 +32,11 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer install \
         --optimize-autoloader \
         --no-scripts
 
-# Kompilowany boot: .env nie wchodzi do obrazu (.dockerignore), a SymfonyRuntime
-# wymaga odczytu .env przy starcie (PathException). --empty = tylko APP_ENV=prod,
-# wartości przychodzą w runtime z środowiska (nic z devowego .env nie trafia do obrazu).
-RUN COMPOSER_ALLOW_SUPERUSER=1 composer dump-env prod --empty
+# Kompilowany boot: SymfonyRuntime wymaga .env lub .env.local.php (PathException bez nich),
+# a .env nie wchodzi do obrazu (.dockerignore). Piszemy .env.local.php jawnie (nie composer
+# dump-env: zależne od cwd root-dir Flexa) — tylko APP_ENV=prod, wartości przychodzą
+# w runtime z środowiska; nic z devowego .env nie trafia do obrazu.
+RUN printf '<?php\nreturn ["APP_ENV" => "prod"];\n' > /var/www/.env.local.php
 
 # PRODUCTION: obraz samowystarczalny — FrankenPHP (Caddy + PHP w jednym binarium)
 # serwuje HTTP sam, bez nginx/fpm. Baza NIE jest taka sama jak dev (ZTS, runtime Caddy).
