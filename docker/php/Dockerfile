@@ -39,10 +39,14 @@ RUN printf 'APP_ENV=prod\n' > /var/www/.env
 
 # Cache wypalany w buildzie: katalog var/cache/prod wchodzi do obrazu (runtime nie tworzy go
 # sam), a błąd bootowania aplikacji wywala BUILD zamiast umierać po cichu w runtime.
-# MONGODB_* potrzebne w czasie kompilacji kontenera (odm bundle) — zaślepki = defaulty z
-# compose; wartości prod przychodzą w runtime przez procesory env (lazy), nie są tu wbijane.
+# Ślepę env = defaulty z .env repo (kompilacja kontenera wymaga rozwinięcia %env()%); żadna
+# nie jest sekretem, prodowe wartości przychodzą w runtime z compose (procesory env lazy).
 RUN MONGODB_URI=mongodb://mongodb:27017 \
     MONGODB_DB=messenger_monitoring \
+    APP_SECRET=buildtime-stub-not-a-secret \
+    API_KEY=buildtime-stub-not-a-secret \
+    DEFAULT_URI=http://localhost \
+    CORS_ALLOW_ORIGIN='^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$' \
     COMPOSER_ALLOW_SUPERUSER=1 \
     php bin/console cache:warmup --env=prod --no-interaction
 
