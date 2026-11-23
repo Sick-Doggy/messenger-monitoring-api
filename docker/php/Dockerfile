@@ -39,8 +39,12 @@ RUN printf 'APP_ENV=prod\n' > /var/www/.env
 
 # Cache wypalany w buildzie: katalog var/cache/prod wchodzi do obrazu (runtime nie tworzy go
 # sam), a błąd bootowania aplikacji wywala BUILD zamiast umierać po cichu w runtime.
-# (bootEnv znajduje .env obok; --no-interaction bo bez TTY; Mongo w buildzie nie jest potrzebne)
-RUN COMPOSER_ALLOW_SUPERUSER=1 php bin/console cache:warmup --env=prod --no-interaction
+# MONGODB_* potrzebne w czasie kompilacji kontenera (odm bundle) — zaślepki = defaulty z
+# compose; wartości prod przychodzą w runtime przez procesory env (lazy), nie są tu wbijane.
+RUN MONGODB_URI=mongodb://mongodb:27017 \
+    MONGODB_DB=messenger_monitoring \
+    COMPOSER_ALLOW_SUPERUSER=1 \
+    php bin/console cache:warmup --env=prod --no-interaction
 
 # PRODUCTION: obraz samowystarczalny — FrankenPHP (Caddy + PHP w jednym binarium)
 # serwuje HTTP sam, bez nginx/fpm. Baza NIE jest taka sama jak dev (ZTS, runtime Caddy).
