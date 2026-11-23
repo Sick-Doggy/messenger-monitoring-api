@@ -11,9 +11,12 @@ var
 composer.phar
 
 # Środowiska i konfiguracje dev-only
+# (.env.local.php jest generowany W ŚRODKU builda, nie z kontekstu — może tu nie obowiązywać)
 .env.*.local
 .env.local
 .env
+.env.*
+
 compose.yaml
 compose.override.yaml
 compose.prod.yaml
