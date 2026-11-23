@@ -37,6 +37,10 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer install \
 # wartości przychodzą w runtime ze środowiska; nic z devowego .env nie trafia do obrazu.
 RUN printf 'APP_ENV=prod\n' > /var/www/.env
 
+# Assets z bundlów (Swagger UI CSS/JS itd.): composer --no-scripts nie odpala assets:install,
+# więc kopiujemy jawnie z vendora — public/bundles w pełnej wersji (z vendor/api-platform).
+RUN COMPOSER_ALLOW_SUPERUSER=1 php bin/console assets:install --env=prod
+
 # Cache wypalany w buildzie: katalog var/cache/prod wchodzi do obrazu (runtime nie tworzy go
 # sam), a błąd bootowania aplikacji wywala BUILD zamiast umierać po cichu w runtime.
 # Ślepę env = defaulty z .env repo (kompilacja kontenera wymaga rozwinięcia %env()%); żadna
