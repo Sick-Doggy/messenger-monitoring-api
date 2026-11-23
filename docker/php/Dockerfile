@@ -37,6 +37,11 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer install \
 # wartości przychodzą w runtime ze środowiska; nic z devowego .env nie trafia do obrazu.
 RUN printf 'APP_ENV=prod\n' > /var/www/.env
 
+# Cache wypalany w buildzie: katalog var/cache/prod wchodzi do obrazu (runtime nie tworzy go
+# sam), a błąd bootowania aplikacji wywala BUILD zamiast umierać po cichu w runtime.
+# (bootEnv znajduje .env obok; --no-interaction bo bez TTY; Mongo w buildzie nie jest potrzebne)
+RUN COMPOSER_ALLOW_SUPERUSER=1 php bin/console cache:warmup --env=prod --no-interaction
+
 # PRODUCTION: obraz samowystarczalny — FrankenPHP (Caddy + PHP w jednym binarium)
 # serwuje HTTP sam, bez nginx/fpm. Baza NIE jest taka sama jak dev (ZTS, runtime Caddy).
 FROM dunglas/frankenphp:1.14.0-php8.4 AS prod
